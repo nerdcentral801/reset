@@ -240,6 +240,22 @@ body {
   font-size: 16px; font-weight: 700;
   color: var(--fg);
   line-height: 1.2;
+  display: flex; align-items: center; gap: 8px;
+}
+
+.status-dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  flex-shrink: 0;
+  background: #444c56;
+  transition: background 0.4s;
+}
+.status-dot.online  { background: #3fb950; box-shadow: 0 0 6px rgba(63,185,80,0.5); }
+.status-dot.offline { background: #f85149; box-shadow: 0 0 6px rgba(248,81,73,0.4); }
+.status-dot.checking { background: #e3b341; animation: pulse 1s infinite; }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
 }
 
 .card-ssid {
@@ -392,6 +408,7 @@ body {
           <div class="role-dot" id="role-dot"></div>
           <span id="username-display"></span>
         </div>
+        <button class="logout-btn" onclick="checkAllStatuses()" title="Refresh connection status">⟳ Refresh</button>
         <button class="logout-btn" onclick="doLogout()">Sign out</button>
       </div>
     </div>
@@ -534,6 +551,9 @@ function showApp() {
     if (p.type === 'covert') covertGrid.appendChild(card);
     else overt.appendChild(card);
   });
+
+  // Check status after cards are in DOM
+  setTimeout(checkAllStatuses, 100);
 }
 
 // ── Card builder ──
@@ -548,7 +568,10 @@ function buildCard(platform, isAdmin) {
   div.innerHTML = `
     <div class="card-header">
       <div>
-        <div class="card-name">${platform.name}</div>
+        <div class="card-name">
+          <span class="status-dot checking" id="dot-${platform.id}" title="Checking..."></span>
+          ${platform.name}
+        </div>
         <div class="card-ssid">${platform.ssid}</div>
       </div>
       <span class="access-tag ${tagClass}">${tagLabel}</span>
@@ -615,6 +638,30 @@ async function triggerReboot(id, token, name) {
       btn.disabled = false;
     }, 6000);
   }
+}
+
+// ── Status checks ──
+async function checkStatus(platform) {
+  const dot = document.getElementById('dot-' + platform.id);
+  if (!dot) return;
+  dot.className = 'status-dot checking';
+  dot.title = 'Checking...';
+  try {
+    const res = await fetch(`https://blynk.cloud/external/api/isHardwareConnected?token=${platform.token}`);
+    const text = await res.text();
+    const online = text.trim() === 'true';
+    dot.className = 'status-dot ' + (online ? 'online' : 'offline');
+    dot.title = online ? 'Online' : 'Offline';
+  } catch(e) {
+    dot.className = 'status-dot offline';
+    dot.title = 'Unreachable';
+  }
+}
+
+function checkAllStatuses() {
+  PLATFORMS.forEach(p => {
+    if (document.getElementById('dot-' + p.id)) checkStatus(p);
+  });
 }
 
 // ── Toast ──
