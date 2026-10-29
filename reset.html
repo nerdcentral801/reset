@@ -1,0 +1,621 @@
+<title>Nerd Central</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+
+<style>
+/* Layout: login overlay over a platform grid dashboard */
+:root {
+  --bg:        #0d1117;
+  --surface:   #161b22;
+  --border:    #30363d;
+  --fg:        #e6edf3;
+  --fg-muted:  #8b949e;
+  --accent:    #1f6feb;
+  --accent-h:  #388bfd;
+  --danger:    #da3633;
+  --success:   #238636;
+  --success-h: #2ea043;
+  --warn:      #9e6a03;
+  --warn-bg:   #2d1f00;
+  --admin-tag: #7c3aed;
+  --overt-tag: #0e7490;
+  color-scheme: dark;
+}
+
+/* This is a deliberately dark-first design — law enforcement operational UI */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  min-height: 100%;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0;
+}
+
+/* ── Login overlay ── */
+#login-overlay {
+  position: fixed; inset: 0;
+  background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 100;
+  padding: max(16px, env(safe-area-inset-left, 0px));
+}
+
+.login-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 36px 32px 32px;
+  width: 100%; max-width: 380px;
+}
+
+.login-logo {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 28px;
+}
+
+.login-logo .badge {
+  width: 42px; height: 42px;
+  background: var(--accent);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+}
+
+.login-logo h1 {
+  font-size: 17px; font-weight: 700;
+  line-height: 1.2;
+  color: var(--fg);
+}
+
+.login-logo p {
+  font-size: 12px; color: var(--fg-muted);
+  letter-spacing: 0.04em; text-transform: uppercase;
+  margin-top: 2px;
+}
+
+.field { margin-bottom: 16px; }
+.field label {
+  display: block;
+  font-size: 12px; font-weight: 600;
+  color: var(--fg-muted);
+  letter-spacing: 0.06em; text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.field input {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--fg);
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  padding: 9px 12px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.field input:focus { border-color: var(--accent); }
+
+.login-btn {
+  width: 100%; margin-top: 8px;
+  background: var(--accent);
+  color: #fff; border: none;
+  border-radius: 6px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px; font-weight: 600;
+  padding: 10px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.login-btn:hover { background: var(--accent-h); }
+
+.login-error {
+  margin-top: 12px;
+  background: rgba(218,54,51,0.12);
+  border: 1px solid rgba(218,54,51,0.35);
+  border-radius: 6px;
+  color: #f85149;
+  font-size: 13px;
+  padding: 8px 12px;
+  text-align: center;
+}
+.login-error[hidden] { display: none !important; }
+
+/* ── Main app ── */
+#app { display: none; }
+#app.visible { display: block; }
+
+.app-header {
+  position: sticky;
+  top: env(safe-area-inset-top, 0px);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  z-index: 10;
+  padding: 0 max(24px, env(safe-area-inset-left, 0px));
+}
+
+.header-inner {
+  display: flex; align-items: center; justify-content: space-between;
+  height: 56px; gap: 16px;
+}
+
+.header-brand {
+  display: flex; align-items: center; gap: 10px;
+}
+
+.header-brand .dot {
+  width: 10px; height: 10px;
+  background: var(--accent);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.header-brand span {
+  font-size: 14px; font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--fg);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.header-right {
+  display: flex; align-items: center; gap: 12px;
+}
+
+.user-pill {
+  display: flex; align-items: center; gap: 7px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 4px 12px 4px 8px;
+  font-size: 12px; font-weight: 600;
+  color: var(--fg-muted);
+  letter-spacing: 0.04em;
+}
+
+.user-pill .role-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.logout-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--fg-muted);
+  font-family: 'Inter', sans-serif;
+  font-size: 12px; font-weight: 500;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.logout-btn:hover { border-color: var(--fg-muted); color: var(--fg); }
+
+/* ── Content ── */
+.content {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 32px 0 48px;
+}
+
+.section-label {
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--fg-muted);
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.platforms-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+  margin-bottom: 40px;
+}
+
+/* ── Platform card ── */
+.platform-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  display: flex; flex-direction: column; gap: 14px;
+  transition: border-color 0.15s;
+}
+.platform-card:hover { border-color: #444c56; }
+
+.card-header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 8px;
+}
+
+.card-name {
+  font-size: 16px; font-weight: 700;
+  color: var(--fg);
+  line-height: 1.2;
+}
+
+.card-ssid {
+  font-size: 11px; color: var(--fg-muted);
+  font-family: 'JetBrains Mono', monospace;
+  margin-top: 3px;
+}
+
+.access-tag {
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 0.07em; text-transform: uppercase;
+  border-radius: 4px;
+  padding: 3px 7px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.tag-admin { background: rgba(124,58,237,0.18); color: #a78bfa; border: 1px solid rgba(124,58,237,0.3); }
+.tag-overt { background: rgba(14,116,144,0.18); color: #67e8f9; border: 1px solid rgba(14,116,144,0.3); }
+
+.card-meta {
+  display: flex; gap: 16px;
+}
+
+.meta-item {
+  display: flex; flex-direction: column; gap: 2px;
+}
+
+.meta-label {
+  font-size: 10px; font-weight: 600;
+  letter-spacing: 0.07em; text-transform: uppercase;
+  color: var(--fg-muted);
+}
+
+.meta-value {
+  font-size: 13px; font-weight: 500;
+  color: var(--fg);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ── Reboot button ── */
+.reboot-btn {
+  width: 100%;
+  background: rgba(31,111,235,0.12);
+  border: 1px solid rgba(31,111,235,0.4);
+  border-radius: 7px;
+  color: #58a6ff;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px; font-weight: 600;
+  padding: 10px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  letter-spacing: 0.02em;
+}
+.reboot-btn:hover {
+  background: rgba(31,111,235,0.22);
+  border-color: rgba(31,111,235,0.7);
+}
+.reboot-btn:disabled {
+  opacity: 0.5; cursor: not-allowed;
+}
+.reboot-btn.sending {
+  background: rgba(158,106,3,0.15);
+  border-color: rgba(158,106,3,0.5);
+  color: #e3b341;
+}
+.reboot-btn.success {
+  background: rgba(35,134,54,0.15);
+  border-color: rgba(35,134,54,0.5);
+  color: #3fb950;
+}
+.reboot-btn.error-state {
+  background: rgba(218,54,51,0.12);
+  border-color: rgba(218,54,51,0.4);
+  color: #f85149;
+}
+
+/* ── Status toast ── */
+#toast {
+  position: fixed;
+  bottom: max(24px, env(safe-area-inset-bottom, 24px));
+  left: 50%; transform: translateX(-50%);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 13px; font-weight: 500;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  white-space: nowrap;
+  z-index: 200;
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+#toast[hidden] { display: none !important; }
+#toast.ok  { border-color: rgba(35,134,54,0.6); color: #3fb950; }
+#toast.err { border-color: rgba(218,54,51,0.5); color: #f85149; }
+
+/* ── Note bar ── */
+.note-bar {
+  background: var(--warn-bg);
+  border: 1px solid rgba(158,106,3,0.4);
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 13px; color: #e3b341;
+  margin-bottom: 28px;
+  display: flex; align-items: flex-start; gap: 10px;
+}
+.note-bar::before { content: "⚠"; flex-shrink: 0; }
+
+@media (max-width: 480px) {
+  .platforms-grid { grid-template-columns: 1fr; }
+  .login-box { padding: 28px 20px 24px; }
+  .content { padding: 20px 0 40px; }
+}
+</style>
+
+<!-- ── LOGIN ── -->
+<div id="login-overlay">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="badge">🔒</div>
+      <div>
+        <h1>Nerd Central</h1>
+        <p>Remote Management Console</p>
+      </div>
+    </div>
+    <div class="field">
+      <label for="username">Username</label>
+      <input type="text" id="username" autocomplete="username" autocapitalize="none" spellcheck="false">
+    </div>
+    <div class="field">
+      <label for="password">Password</label>
+      <input type="password" id="password" autocomplete="current-password">
+    </div>
+    <button class="login-btn" onclick="doLogin()">Sign In</button>
+    <div id="login-error" class="login-error" hidden>Invalid username or password.</div>
+  </div>
+</div>
+
+<!-- ── APP ── -->
+<div id="app">
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="header-brand">
+        <div class="dot"></div>
+        <span>NERD · CENTRAL</span>
+      </div>
+      <div class="header-right">
+        <div class="user-pill">
+          <div class="role-dot" id="role-dot"></div>
+          <span id="username-display"></span>
+        </div>
+        <button class="logout-btn" onclick="doLogout()">Sign out</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="content">
+    <div class="note-bar">
+      Reboot cycles power off for 15 seconds then restores it. Router and camera will be offline for approximately 2–3 minutes.
+    </div>
+
+    <div id="admin-section" hidden>
+      <div class="section-label">Covert Platforms — Admin Only</div>
+      <div class="platforms-grid" id="covert-grid"></div>
+      <div class="section-label">Overt Platforms</div>
+    </div>
+
+    <div class="platforms-grid" id="overt-grid"></div>
+  </div>
+</div>
+
+<div id="toast" hidden></div>
+
+<script>
+// ── Credentials ──
+const USERS = {
+  'CPDINTEL': { password: 'SAFEp@ssword#1', role: 'admin',  label: 'CPDINTEL',  color: '#a78bfa' },
+  'ITMS':     { password: 'R@dcliff#301',   role: 'itms',   label: 'ITMS User', color: '#67e8f9' },
+};
+
+// ── Platform data ──
+const PLATFORMS = [
+  {
+    id: 'rap-alarm',
+    name: 'RAP Alarm',
+    ssid: 'CricketWireless22',
+    token: 'vd20Bg8PZ5c6pqOKIwIjgLDIVSeMU3wv',
+    reboot: '7:00 AM',
+    type: 'overt',
+    access: 'all',
+  },
+  {
+    id: 'platform-1',
+    name: 'Platform 1',
+    ssid: 'CricketWireless??',
+    token: 'ZNI95Ut1KJgnwq-zBDxyiNsvjC2fKXyZ',
+    reboot: '5:00 AM',
+    type: 'covert',
+    access: 'admin',
+  },
+  {
+    id: 'platform-3',
+    name: 'Platform 3',
+    ssid: 'CricketWireless8',
+    token: 'H34IsMfC-H7ctfus2qKwt4nS-qwn9VyN',
+    reboot: '5:00 AM',
+    type: 'covert',
+    access: 'admin',
+  },
+  {
+    id: 'platform-28',
+    name: 'Platform 28',
+    ssid: 'CricketWireless29',
+    token: 'UWABmvnQMNUvRMH3wly_5Dc_cOPskOBU',
+    reboot: '5:00 AM',
+    type: 'covert',
+    access: 'admin',
+  },
+];
+
+// ── State ──
+let currentUser = null;
+
+// ── Login ──
+function doLogin() {
+  const u = document.getElementById('username').value.trim().toUpperCase();
+  const p = document.getElementById('password').value;
+  const err = document.getElementById('login-error');
+
+  const match = Object.entries(USERS).find(([k, v]) => k.toUpperCase() === u && v.password === p);
+  if (!match) {
+    err.hidden = false;
+    document.getElementById('password').value = '';
+    return;
+  }
+
+  err.hidden = true;
+  const [key, user] = match;
+  currentUser = { key, ...user };
+
+  try { localStorage.setItem('cpdLastUser', key); } catch(e) {}
+
+  showApp();
+}
+
+document.getElementById('password').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+});
+document.getElementById('username').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('password').focus();
+});
+
+function doLogout() {
+  currentUser = null;
+  try { localStorage.removeItem('cpdLastUser'); } catch(e) {}
+  document.getElementById('app').classList.remove('visible');
+  document.getElementById('login-overlay').style.display = 'flex';
+  document.getElementById('username').value = '';
+  document.getElementById('password').value = '';
+  document.getElementById('covert-grid').innerHTML = '';
+  document.getElementById('overt-grid').innerHTML = '';
+}
+
+function showApp() {
+  document.getElementById('login-overlay').style.display = 'none';
+  document.getElementById('app').classList.add('visible');
+
+  document.getElementById('username-display').textContent = currentUser.label;
+  document.getElementById('role-dot').style.background = currentUser.color;
+
+  const isAdmin = currentUser.role === 'admin';
+  document.getElementById('admin-section').hidden = !isAdmin;
+
+  const covertGrid = document.getElementById('covert-grid');
+  const overt = document.getElementById('overt-grid');
+  covertGrid.innerHTML = '';
+  overt.innerHTML = '';
+
+  PLATFORMS.forEach(p => {
+    if (p.access === 'admin' && !isAdmin) return;
+    const card = buildCard(p, isAdmin);
+    if (p.type === 'covert') covertGrid.appendChild(card);
+    else overt.appendChild(card);
+  });
+}
+
+// ── Card builder ──
+function buildCard(platform, isAdmin) {
+  const div = document.createElement('div');
+  div.className = 'platform-card';
+  div.id = 'card-' + platform.id;
+
+  const tagClass = platform.type === 'covert' ? 'tag-admin' : 'tag-overt';
+  const tagLabel = platform.type === 'covert' ? 'Covert' : 'Overt';
+
+  div.innerHTML = `
+    <div class="card-header">
+      <div>
+        <div class="card-name">${platform.name}</div>
+        <div class="card-ssid">${platform.ssid}</div>
+      </div>
+      <span class="access-tag ${tagClass}">${tagLabel}</span>
+    </div>
+    <div class="card-meta">
+      <div class="meta-item">
+        <div class="meta-label">Daily Reboot</div>
+        <div class="meta-value">${platform.reboot}</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Board</div>
+        <div class="meta-value">ESP32</div>
+      </div>
+    </div>
+    <button class="reboot-btn" id="btn-${platform.id}" onclick="triggerReboot('${platform.id}','${platform.token}','${platform.name}')">
+      <span id="btn-icon-${platform.id}">⟳</span>
+      <span id="btn-text-${platform.id}">Reboot Now</span>
+    </button>
+  `;
+  return div;
+}
+
+// ── Reboot ──
+async function triggerReboot(id, token, name) {
+  const btn = document.getElementById('btn-' + id);
+  const icon = document.getElementById('btn-icon-' + id);
+  const text = document.getElementById('btn-text-' + id);
+
+  btn.disabled = true;
+  btn.className = 'reboot-btn sending';
+  icon.textContent = '…';
+  text.textContent = 'Sending command…';
+
+  const url = `https://blynk.cloud/external/api/update?token=${token}&V0=1`;
+
+  try {
+    const res = await fetch(url);
+    if (res.ok) {
+      btn.className = 'reboot-btn success';
+      icon.textContent = '✓';
+      text.textContent = 'Command sent';
+      showToast(`${name} reboot triggered`, 'ok');
+
+      // Reset button after 8s
+      setTimeout(() => {
+        btn.className = 'reboot-btn';
+        icon.textContent = '⟳';
+        text.textContent = 'Reboot Now';
+        btn.disabled = false;
+      }, 8000);
+    } else {
+      throw new Error(`HTTP ${res.status}`);
+    }
+  } catch (err) {
+    btn.className = 'reboot-btn error-state';
+    icon.textContent = '✗';
+    text.textContent = 'Failed — check connection';
+    showToast(`${name}: command failed`, 'err');
+
+    setTimeout(() => {
+      btn.className = 'reboot-btn';
+      icon.textContent = '⟳';
+      text.textContent = 'Reboot Now';
+      btn.disabled = false;
+    }, 6000);
+  }
+}
+
+// ── Toast ──
+let toastTimer;
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = type;
+  t.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.hidden = true; }, 4000);
+}
+</script>
